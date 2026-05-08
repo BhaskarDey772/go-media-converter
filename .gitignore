@@ -1,8 +1,5 @@
 output/
 uploads/
-docs/docs.go
-docs/swagger.json
-docs/swagger.yaml
 *.mp4
 *.ts
 bin/

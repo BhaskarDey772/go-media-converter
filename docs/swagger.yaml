@@ -1,0 +1,156 @@
+basePath: /
+definitions:
+  job.Job:
+    properties:
+      error:
+        type: string
+      hls_url:
+        type: string
+      job_id:
+        type: string
+      status:
+        $ref: '#/definitions/job.Status'
+    type: object
+  job.Status:
+    enum:
+    - pending
+    - processing
+    - done
+    - failed
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusProcessing
+    - StatusDone
+    - StatusFailed
+host: localhost:8080
+info:
+  contact:
+    name: API Support
+  description: Converts uploaded MP4 files to adaptive bitrate HLS streams (360p/720p/1080p).
+    Upload a file, receive a job_id, poll for status, then play the HLS stream.
+  title: Go Media Converter API
+  version: "1.0"
+paths:
+  /api/v1/jobs/{id}:
+    get:
+      description: Returns current status. When done, hls_url is populated.
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/job.Job'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get job status
+      tags:
+      - jobs
+  /api/v1/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts a multipart MP4 upload, validates MIME type, creates an
+        async conversion job, and returns the job ID.
+      parameters:
+      - description: MP4 video file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "413":
+          description: Request Entity Too Large
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload MP4 for HLS conversion
+      tags:
+      - jobs
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+  /hls/{job_id}/{filepath}:
+    get:
+      description: Serves master.m3u8, rendition playlists, and .ts segments for a
+        completed job.
+      parameters:
+      - description: Job ID
+        in: path
+        name: job_id
+        required: true
+        type: string
+      - description: File path (master.m3u8, 360p.m3u8, segments/360p_000.ts, etc.)
+        in: path
+        name: filepath
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Serve HLS files
+      tags:
+      - hls
+swagger: "2.0"
+tags:
+- description: Upload and track media conversion jobs
+  name: jobs
+- description: Serve HLS stream files
+  name: hls
+- description: Health and status endpoints
+  name: system
