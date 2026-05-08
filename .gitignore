@@ -6,3 +6,6 @@ docs/swagger.yaml
 *.mp4
 *.ts
 bin/
+server
+*.log
+.env
